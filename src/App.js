@@ -1,14 +1,51 @@
-import { Routes, Route, Link } from "react-router-dom";
-import RequireUser from "./Authentication/RequireUser";
-import Messenger from "./Pages/Messenger/Messenger";
+import io from "socket.io-client";
+import { useEffect, useState } from "react";
+
+const socket = io.connect("http://localhost:5000");
 
 function App() {
+  //Room State
+  const [room, setRoom] = useState("");
+
+  // Messages States
+  const [message, setMessage] = useState("");
+  const [messageReceived, setMessageReceived] = useState("");
+
+  const joinRoom = () => {
+    if (room !== "") {
+      socket.emit("join_room", room);
+    }
+  };
+
+  const sendMessage = () => {
+    socket.emit("send_message", { message, room });
+  };
+
+  useEffect(() => {
+    socket.on("receive_message", (data) => {
+      setMessageReceived(data.message);
+    });
+  }, []);
+
   return (
-    <Routes>
-      <Route element={<RequireUser />}>
-        <Route path="/messenger" element={<Messenger />} />
-      </Route>
-    </Routes>
+    <div className="container mx-auto px-4 flex bg-accent">
+      <input
+        placeholder="Room Number..."
+        onChange={(event) => {
+          setRoom(event.target.value);
+        }}
+      />
+      <button className="btn btn-secondary" onClick={joinRoom}> Join Room</button>
+      <input
+        placeholder="Message..."
+        onChange={(event) => {
+          setMessage(event.target.value);
+        }}
+      />
+      <button className="btn btn-primary" onClick={sendMessage}> Send Message</button>
+      <h1> Message:</h1>
+      {messageReceived}
+    </div>
   );
 }
 
